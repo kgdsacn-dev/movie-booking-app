@@ -1,0 +1,27 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  height: 100vh; /* Full height of the viewport */
+  display: flex;
+  flex-direction: column; /* Stack header and content vertically */
+  background-color: #f5f5f5; /* Optional: add a background color */
+}
+
+header {
+  background-color: #333;
+  color: white;
+  padding: 1rem;
+  text-align: center;
+  width: 100%; /* Ensure header spans full width */
+}
+
+.app-content {
+  width: 100%;
+  max-width: 800px; /* Optional: limits the width of the content */
+  padding: 20px;
+  box-sizing: border-box; /* Ensure padding is included in the width */
+  text-align: center; /* Center text inside .app-content */
+  margin-top: 20px; /* Add space between header and content */
+  flex-grow: 1; /* This makes sure the content grows to take available space */
+}
