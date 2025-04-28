@@ -1,5 +1,4 @@
-import { useState, useEffect, useContext } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useState } from "react";
 import {
   Typography,
   Container,
@@ -15,43 +14,80 @@ import {
   Box,
   Modal,
 } from "@mui/material";
-import axios from "axios";
-import { Movie } from "../interfaces/Movies";
-import { Booking } from "../interfaces/Booking";
-import { BookingContext } from "../context/BookingContext";
+import { Booking } from "../../../interfaces/Booking";
+import { addBookings, getMovies } from "../../../services/user-service";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { useBookingStore } from "../../../store/bookingStore";
+import { useMoviesStore } from "../../../store/moviesStore";
+import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
+import { v4 as uuidv4 } from "uuid";
+import { useAuthentication } from "@/features/authentication/auth-context";
 
-const apiKey = "9f590a4deb36b7a102496a965824d82c";
-const baseUrl = "https://api.themoviedb.org/3/movie";
-const imageUrl = "https://image.tmdb.org/t/p/w500";
-
-export default function BookingPage() {
-  const { movieId } = useParams<{ movieId: string }>();
-  const [movie, setMovie] = useState<Movie | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [showtime, setShowtime] = useState("");
-  const [seats, setSeats] = useState("");
-  const navigate = useNavigate();
+const BookingPage = () => {
+  const { id } = Route.useParams();
+  const router = useRouter();
+  const { movie, setMovie } = useMoviesStore();
+  const { showtime, seats, setShowtime, setSeats, openModal, setOpenModal } =
+    useBookingStore();
   const showingTimeArray = ["10:00 AM", "1:00 PM", "4:00 PM", "7:00 PM"];
-  const { dispatch } = useContext(BookingContext)!;
-  const [openModal, setOpenModal] = useState(false);
+  const auth = useAuthentication();
+  const userId = auth.userProfile.userId;
 
-  useEffect(() => {
-    const fetchMovie = async () => {
-      try {
-        const response = await axios.get(
-          `${baseUrl}/${movieId}?api_key=${apiKey}`
-        );
-        setMovie(response.data);
-        setLoading(false);
-      } catch (error) {
-        console.error("Error fetching movie:", error);
-        setLoading(false);
-      }
+  const { isLoading } = useQuery({
+    queryKey: ["movie", id],
+    queryFn: async () => {
+      const movies = (await getMovies()) || [];
+      const selectedMovie = movies.find(
+        (m: any) => m.id === parseInt(id || "0", 10)
+      );
+      setMovie(selectedMovie || null);
+      return selectedMovie;
+    },
+    enabled: !!id,
+  });
+
+  // Mutation for adding bookings
+  const mutation = useMutation({
+    mutationFn: addBookings,
+    onSuccess: (data) => {
+      console.log("Booking added successfully:", data);
+      setOpenModal(true);
+    },
+    onError: (error) => {
+      console.error("Error adding booking:", error);
+    },
+  });
+
+  const handleNavigation = (
+    router: ReturnType<typeof useRouter>,
+    path: string
+  ) => {
+    router.navigate({ to: path });
+  };
+
+  const handleBooking = async () => {
+    const booking: Booking = {
+      id: uuidv4(),
+      userId: userId,
+      movieId: movie?.id || 0,
+      showtime,
+      seats: seats || 0,
+      movieTitle: movie?.movieTitle || "",
     };
-    fetchMovie();
-  }, [movieId]);
 
-  if (loading) {
+    await mutation.mutateAsync(booking);
+  };
+
+  const handleGoBack = () => {
+    handleNavigation(router, "/app");
+  };
+
+  const handleCloseModal = () => {
+    setOpenModal(false);
+    handleNavigation(router, "/app/bookings-page");
+  };
+
+  if (isLoading) {
     return (
       <Container
         sx={{
@@ -74,46 +110,23 @@ export default function BookingPage() {
     );
   }
 
-  const handleBooking = () => {
-    const newBooking: Booking = {
-      movieId: movie.id,
-      showtime,
-      seats: parseInt(seats, 10),
-      movieTitle: movie.title, // Add movieTitle
-    };
-
-    dispatch({ type: "ADD_BOOKING", payload: newBooking });
-    setOpenModal(true);
-    setShowtime(showtime);
-    setSeats(seats);
-  };
-
-  const handleGoBack = () => {
-    navigate("/");
-  };
-
-  const handleCloseModal = () => {
-    setOpenModal(false);
-    navigate("/bookings");
-  };
-
   return (
     <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
       <Paper elevation={3} sx={{ p: 3 }}>
         <Grid container spacing={3}>
           <Grid size={{ xs: 12, md: 4 }}>
             <img
-              src={`${imageUrl}${movie.poster_path}`}
-              alt={movie.title}
+              src={"https://image.tmdb.org/t/p/w500" + movie?.posterPath}
+              alt={movie?.movieTitle}
               style={{ width: "100%" }}
             />
           </Grid>
-          <Grid size={{ xs: 12, md: 8 }}>
+          <Grid>
             <Typography variant="h4" gutterBottom>
-              {movie.title}
+              {movie?.movieTitle}
             </Typography>
             <Typography variant="body1" gutterBottom>
-              {movie.overview}
+              {movie?.movieDescription}
             </Typography>
 
             <FormControl fullWidth sx={{ mt: 2 }}>
@@ -139,7 +152,7 @@ export default function BookingPage() {
               fullWidth
               sx={{ mt: 2 }}
               value={seats}
-              onChange={(e) => setSeats(e.target.value)}
+              onChange={(e) => setSeats(+e.target.value || 0)}
             />
 
             <Box
@@ -183,8 +196,8 @@ export default function BookingPage() {
             Booking Confirmed!
           </Typography>
           <Typography sx={{ mt: 2 }}>
-            Your booking for {movie?.title} at {showtime} with {seats} seats has
-            been confirmed.
+            Your booking for {movie?.movieTitle} at {showtime} with {seats}{" "}
+            seats has been confirmed.
           </Typography>
           <Button onClick={handleCloseModal} sx={{ mt: 2 }}>
             View Bookings
@@ -193,4 +206,18 @@ export default function BookingPage() {
       </Modal>
     </Container>
   );
-}
+};
+
+export const Route = createFileRoute("/app/booking-page/$id")({
+  component: BookingPage,
+  beforeLoad: async ({ context, location }) => {
+    if (!context.auth.userProfile.token) {
+      throw redirect({
+        to: "/login",
+        search: {
+          redirect: location.href,
+        },
+      });
+    }
+  },
+});
