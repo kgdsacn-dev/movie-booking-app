@@ -23,6 +23,7 @@ import {
   Select,
   MenuItem,
   CircularProgress,
+  useMediaQuery,
 } from "@mui/material";
 import SentimentDissatisfiedOutlinedIcon from "@mui/icons-material/SentimentDissatisfiedOutlined";
 
@@ -33,6 +34,7 @@ import {
   ColumnDef,
   flexRender,
   getCoreRowModel,
+  getPaginationRowModel,
   useReactTable,
 } from "@tanstack/react-table";
 
@@ -59,6 +61,7 @@ const BookingsPage = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [bookingToDelete, setBookingToDelete] = useState<Booking | null>(null);
+  const isSmallScreen = useMediaQuery("(max-width:600px)");
   const auth = useAuthentication();
   const userId = auth.userProfile.userId;
   const showingTimeArray = ["10:00 AM", "1:00 PM", "4:00 PM", "7:00 PM"];
@@ -164,6 +167,13 @@ const BookingsPage = () => {
     data: bookingsData || [],
     columns,
     getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    initialState: {
+      pagination: {
+        pageIndex: 0,
+        pageSize: 10,
+      },
+    },
   });
 
   if (!bookingsData?.length) {
@@ -205,38 +215,67 @@ const BookingsPage = () => {
           <CircularProgress />
         </Container>
       ) : (
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => (
-                    <TableCell key={header.id}>
-                      {flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))}
-            </TableHead>
-            <TableBody>
-              {table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id}>
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+        <>
+          <TableContainer component={Paper}>
+            <Table>
+              <TableHead>
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <TableRow key={headerGroup.id}>
+                    {headerGroup.headers.map((header) => (
+                      <TableCell key={header.id}>
+                        {flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))}
+              </TableHead>
+              <TableBody>
+                {table.getRowModel().rows.map((row) => (
+                  <TableRow key={row.id}>
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginTop: 2,
+            }}
+          >
+            <Button
+              variant="outlined"
+              onClick={() => table.previousPage()}
+              disabled={!table.getCanPreviousPage()}
+            >
+              Previous
+            </Button>
+            <Typography>
+              Page {table.getState().pagination.pageIndex + 1} of{" "}
+              {table.getPageCount()}
+            </Typography>
+            <Button
+              variant="outlined"
+              onClick={() => table.nextPage()}
+              disabled={!table.getCanNextPage()}
+            >
+              Next
+            </Button>
+          </Box>
+        </>
       )}
 
       <Dialog open={isDialogOpen} onClose={() => setIsDialogOpen(false)}>
@@ -285,24 +324,36 @@ const BookingsPage = () => {
         open={deleteDialogOpen}
         onClose={() => setDeleteDialogOpen(false)}
         fullWidth
-        maxWidth="sm"
+        maxWidth={isSmallScreen ? "xs" : "sm"} // Adjust maxWidth based on screen size
         sx={{
           "& .MuiDialog-paper": {
-            padding: 2,
+            padding: isSmallScreen ? 1 : 2, // Smaller padding for small screens
             borderRadius: 2,
-            minWidth: "500px",
+            minWidth: isSmallScreen ? "300px" : "500px", // Adjust width for small screens
           },
         }}
       >
         <DialogTitle>Confirm Deletion</DialogTitle>
         <DialogContent>
-          <Typography variant="body1">
+          <Typography
+            variant="body1"
+            textAlign={isSmallScreen ? "center" : "left"}
+          >
             Are you sure you want to delete the booking for{" "}
             <strong>{bookingToDelete?.movieTitle}</strong>?
           </Typography>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)} color="primary">
+        <DialogActions
+          sx={{
+            flexDirection: isSmallScreen ? "column" : "row", // Stack buttons vertically on small screens
+            gap: isSmallScreen ? 1 : 0, // Add spacing between buttons on small screens
+          }}
+        >
+          <Button
+            onClick={() => setDeleteDialogOpen(false)}
+            color="primary"
+            fullWidth={isSmallScreen} // Full-width buttons for small screens
+          >
             Cancel
           </Button>
           <Button
@@ -314,6 +365,7 @@ const BookingsPage = () => {
             }}
             color="error"
             variant="contained"
+            fullWidth={isSmallScreen} // Full-width buttons for small screens
           >
             Delete
           </Button>

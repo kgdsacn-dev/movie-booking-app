@@ -47,47 +47,46 @@ export default function MovieList({ movies, imageBaseUrl }: MovieProps) {
 
   return (
     <Container maxWidth="xl" sx={{ mt: 3, mb: 3 }}>
-      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3 }}>
+      <Grid container spacing={3}>
         {movies.map((movie) => (
-          <Paper key={movie.id} elevation={3} sx={{ flex: "1 0 400px", p: 3 }}>
-            <Grid container spacing={4}>
-              <Grid size={{ xs: 12 }}>
-                <Card
-                  sx={{
-                    height: "100%",
-                    display: "flex",
-                    flexDirection: "column",
-                  }}
-                >
-                  <CardMedia
-                    component="img"
-                    height="250"
-                    image={`${imageBaseUrl}${movie.posterPath}`}
-                    alt={movie.movieTitle}
-                    sx={{ flexGrow: 1, objectFit: "cover" }}
-                  />
-                </Card>
-              </Grid>
-              <Grid size={{ xs: 12 }}>
-                <Typography variant="h4" gutterBottom>
-                  {movie.movieTitle}
-                </Typography>
-                <Typography variant="body1" gutterBottom>
-                  {movie.movieDescription}
-                </Typography>
-                <Button
-                  sx={{ mt: 2 }}
-                  onClick={() => handleNavigation(movie.id, router)}
-                  variant="contained"
-                  color="primary"
-                >
-                  Book Now
-                </Button>
-              </Grid>
-            </Grid>
-          </Paper>
+          <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={movie.id}>
+            <Paper elevation={3} sx={{ height: "100%", p: 2 }}>
+              <Card
+                sx={{
+                  height: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                }}
+              >
+                <CardMedia
+                  component="img"
+                  height="250"
+                  image={`${imageBaseUrl}${movie.posterPath}`}
+                  alt={movie.movieTitle}
+                  sx={{ objectFit: "cover" }}
+                />
+                <Box sx={{ p: 2 }}>
+                  <Typography variant="h5" gutterBottom>
+                    {movie.movieTitle}
+                  </Typography>
+                  <Typography variant="body2" gutterBottom>
+                    {movie.movieDescription}
+                  </Typography>
+                  <Button
+                    sx={{ mt: 2 }}
+                    onClick={() => handleNavigation(movie.id, router)}
+                    variant="contained"
+                    color="primary"
+                    fullWidth // Full-width button for better mobile experience
+                  >
+                    Book Now
+                  </Button>
+                </Box>
+              </Card>
+            </Paper>
+          </Grid>
         ))}
-      </Box>
+      </Grid>
     </Container>
   );
 }

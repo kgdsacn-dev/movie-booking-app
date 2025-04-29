@@ -6,6 +6,7 @@ import {
   ColumnDef,
   flexRender,
   getCoreRowModel,
+  getPaginationRowModel,
 } from "@tanstack/react-table";
 
 import {
@@ -187,6 +188,13 @@ function AdminHomePage() {
     data: moviesData || [],
     columns,
     getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    initialState: {
+      pagination: {
+        pageIndex: 0,
+        pageSize: 10,
+      },
+    },
   });
 
   const handleEdit = (movie: any) => {
@@ -333,6 +341,33 @@ function AdminHomePage() {
           </TableBody>
         </Table>
       </TableContainer>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginTop: 2,
+        }}
+      >
+        <Button
+          variant="outlined"
+          onClick={() => table.previousPage()}
+          disabled={!table.getCanPreviousPage()}
+        >
+          Previous
+        </Button>
+        <Typography>
+          Page {table.getState().pagination.pageIndex + 1} of{" "}
+          {table.getPageCount()}
+        </Typography>
+        <Button
+          variant="outlined"
+          onClick={() => table.nextPage()}
+          disabled={!table.getCanNextPage()}
+        >
+          Next
+        </Button>
+      </Box>
 
       {/* Edit Movie Dialog */}
       <Dialog open={isDialogOpen} onClose={() => setIsDialogOpen(false)}>
