@@ -284,6 +284,7 @@ const BookingsPage = () => {
           <FormControl fullWidth sx={{ mt: 2 }}>
             <InputLabel id="showtime-label">Showtime</InputLabel>
             <Select
+              required
               labelId="showtime-label"
               id="showtime"
               label="Showtime"
